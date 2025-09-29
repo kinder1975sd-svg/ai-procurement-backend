@@ -1,4 +1,4 @@
-// models/Quote.js - Fixed version with corrected costEfficiency validation
+// models/Quote.js - Corrected version with fixed validation
 import mongoose from 'mongoose';
 
 const quoteSchema = new mongoose.Schema({
@@ -37,17 +37,17 @@ const quoteSchema = new mongoose.Schema({
     features: [{ type: String }] // required features
   },
 
-  // AI Matching Score
+  // AI Matching Score - FIXED: Allow scores 0-100 instead of 0-1
   matchScore: {
-    total: { type: Number, required: true, min: 0, max: 1 }, // 0-1 score
+    total: { type: Number, required: true, min: 0, max: 100 }, // FIXED: 0-100 score
     breakdown: {
-      volumeMatch: { type: Number, min: 0, max: 1 },
-      costEfficiency: { type: Number, min: -1, max: 1 }, // FIXED: Allow negative values
-      speedMatch: { type: Number, min: 0, max: 1 },
-      featureMatch: { type: Number, min: 0, max: 1 },
-      reliabilityMatch: { type: Number, min: 0, max: 1 },
-      paperSizeMatch: { type: Number, min: 0, max: 1 },
-      urgencyMatch: { type: Number, min: 0, max: 1 }
+      volumeMatch: { type: Number, min: 0, max: 100 },
+      costEfficiency: { type: Number, min: -100, max: 100 }, // Allow negative values for over-budget
+      speedMatch: { type: Number, min: 0, max: 100 },
+      featureMatch: { type: Number, min: 0, max: 100 },
+      reliabilityMatch: { type: Number, min: 0, max: 100 },
+      paperSizeMatch: { type: Number, min: 0, max: 100 },
+      urgencyMatch: { type: Number, min: 0, max: 100 }
     },
     reasoning: [{ type: String }], // AI explanations
     confidence: { 
@@ -167,11 +167,11 @@ const quoteSchema = new mongoose.Schema({
     autoRenewal: { type: Boolean, default: false }
   },
 
-  // Quote Status - ENHANCED
+  // Quote Status - FIXED: Added 'pending' to enum
   status: { 
     type: String, 
-    enum: ['draft', 'generated', 'sent', 'viewed', 'downloaded', 'accepted', 'rejected', 'expired', 'withdrawn', 'converted'],
-    default: 'generated'
+    enum: ['pending', 'draft', 'generated', 'sent', 'viewed', 'downloaded', 'accepted', 'rejected', 'expired', 'withdrawn', 'converted'],
+    default: 'pending'
   },
 
   // Customer Interaction
@@ -231,7 +231,7 @@ const quoteSchema = new mongoose.Schema({
     competitorQuotesReceived: { type: Number, default: 0 }
   },
 
-  // NEW: Quote Decision Tracking
+  // Quote Decision Tracking
   decisionDetails: {
     acceptedAt: { type: Date },
     acceptedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
@@ -241,7 +241,7 @@ const quoteSchema = new mongoose.Schema({
     decisionNotes: { type: String }
   },
 
-  // NEW: Order Creation (when quote is accepted)
+  // Order Creation (when quote is accepted)
   createdOrder: { 
     type: mongoose.Schema.Types.ObjectId, 
     ref: 'Order' 
@@ -301,9 +301,10 @@ quoteSchema.virtual('cpcDisplay').get(function() {
   }
 });
 
-// NEW: Virtual for status display
+// Virtual for status display
 quoteSchema.virtual('statusDisplay').get(function() {
   const statusDisplayMap = {
+    'pending': 'Pending',
     'draft': 'Draft',
     'generated': 'Generated',
     'sent': 'Sent to Customer',
